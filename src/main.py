@@ -6,11 +6,9 @@ import pysubs2
 usage_message = \
 '''\
 Usage:
-    srtToAss --input SOURCE --output DEST
+    vttToAss --input SOURCE --output DEST
     or
-    srtToAss -i SOURCE -o DEST
-Example:
-    srtToAss -i in.srt -o out.ass\
+    vttToAss -i SOURCE -o DEST\
 '''
 
 # --GLOBAL VARIABLES--
