@@ -1,22 +1,6 @@
 import re
 import os
-import sys, getopt
 import pysubs2
-
-usage_message = \
-'''\
-Usage:
-    srtToAss --input SOURCE --output DEST
-    or
-    srtToAss -i SOURCE -o DEST
-Example:
-    srtToAss -i in.srt -o out.ass\
-'''
-
-# --GLOBAL VARIABLES--
-SUB_PATH_VTT = ''
-TMP_SUB_PATH_ASS = ''
-SUB_PATH_ASS = ''
 
 # --ReGex patterns--
 re_subLineVtt = re.compile(
@@ -26,64 +10,21 @@ re_subLineAss = re.compile(
     r"\d,\d:\d\d:\d\d\.\d\d,\d:\d\d:\d\d\.\d\d"
 )
 
-def main():
-    getOpts()
-    pys2_subs = pysubs2.load(SUB_PATH_VTT)
-    pys2_subs.save(TMP_SUB_PATH_ASS)
-    linesVtt = readSubFile(SUB_PATH_VTT)
-    tmp_linesAss = readSubFile(TMP_SUB_PATH_ASS)
+def vttToAss(subPathVtt):
+    pys2_subs = pysubs2.load(subPathVtt)
+    linesVtt = readSubFile(subPathVtt)
+
+    tmp_subPathAss = os.path.join(os.getcwd(), 'tmp_sub.vtt')
+    pys2_subs.save(tmp_subPathAss)
+    tmp_linesAss = readSubFile(tmp_subPathAss)
+    os.remove(tmp_subPathAss)
+
     slVtt = getSubLines(linesVtt, re_subLineVtt)
     slAss = getSubLines(tmp_linesAss, re_subLineAss)
     subLines = mergeSubLines(slVtt, slAss)
     fixed_linesAss = fixMarginTop(subLines, linesVtt, tmp_linesAss)
     fixed_linesAss = fixWeirdChars(subLines, linesVtt, fixed_linesAss)
-    writeSubFile(SUB_PATH_ASS, ''.join(fixed_linesAss))
-    os.remove(TMP_SUB_PATH_ASS)
-    print(f'Sub converted: {SUB_PATH_ASS}')
-
-def getOpts():
-    global SUB_PATH_VTT, TMP_SUB_PATH_ASS, SUB_PATH_ASS
-    try:
-        opts, _ = getopt.getopt(
-            sys.argv[1:],
-            ":i:o:h", ["input=", "output=", "help"]
-        )
-
-    except getopt.GetoptError as err:
-        print(err)
-        print(usage_message)
-        sys.exit(1)
-
-    if not opts:
-        print('No arguments were provided!')
-        print(usage_message)
-        sys.exit(1)
-
-    for opt, arg in opts:
-        if opt in ("-h", "--help"):
-            print(usage_message)
-            sys.exit()
-        elif opt in ("-i", "--input"):
-            try:
-                SUB_PATH_VTT = os.path.abspath(arg)
-            except:
-                print(f'{arg} is not a valid input path')
-                print(usage_message)
-                sys.exit(1)
-        elif opt in ("-o", "--output"):
-            try:
-                SUB_PATH_ASS = os.path.abspath(arg)
-            except:
-                print(f'{arg} is not a valid output path')
-                print(usage_message)
-                sys.exit(1)
-            else:
-                l = os.path.split(os.path.abspath(arg))
-                TMP_SUB_PATH_ASS = os.path.join(
-                    l[0], f"tmp_{l[1]}"
-                )
-        else:
-            assert False, "unhandled option"
+    return ''.join(fixed_linesAss)
 
 def mergeSubLines(slVtt, slAss):
     if len(slVtt) == len(slAss):
@@ -139,6 +80,3 @@ def readSubFile(subPath):
 def writeSubFile(subPath, lines):
     with open(subPath, 'w') as subFile:
         subFile.write(lines)
-
-if __name__ == '__main__':
-    main()
